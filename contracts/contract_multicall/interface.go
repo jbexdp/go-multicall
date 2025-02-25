@@ -7,4 +7,5 @@ import (
 // Interface is an abstraction of the contract.
 type Interface interface {
 	Aggregate3(opts *bind.CallOpts, calls []Multicall3Call3) ([]Multicall3Result, error)
+	TryAggregate(opts *bind.CallOpts, requireSuccess bool, calls []Multicall3Call) ([]Multicall3Result, error)
 }
