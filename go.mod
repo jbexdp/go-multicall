@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/ethereum/go-ethereum v1.11.5
-	github.com/forta-network/go-multicall v0.0.0-20230701154355-9467c4ddaa83
 	github.com/stretchr/testify v1.8.2
 )
 
