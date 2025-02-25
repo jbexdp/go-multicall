@@ -122,3 +122,51 @@ func chunkInputs[T any](chunkSize int, inputs []T) (chunks [][]T) {
 
 	return
 }
+
+func (caller *Caller) TryCall(opts *bind.CallOpts, requireSuccess bool, calls ...*Call) ([]*Call, error) {
+	var multiCalls []contract_multicall.Multicall3Call
+
+	for i, call := range calls {
+		b, err := call.Pack()
+		if err != nil {
+			return calls, fmt.Errorf("failed to pack call inputs at index [%d]: %v", i, err)
+		}
+		multiCalls = append(multiCalls, contract_multicall.Multicall3Call{
+			Target:   call.Contract.Address,
+			CallData: b,
+		})
+	}
+
+	results, err := caller.contract.TryAggregate(opts, requireSuccess, multiCalls)
+	if err != nil {
+		return calls, fmt.Errorf("multicall failed: %v", err)
+	}
+
+	for i, result := range results {
+		call := calls[i] // index always matches
+		call.Failed = !result.Success
+		if err := call.Unpack(result.ReturnData); err != nil {
+			return calls, fmt.Errorf("failed to unpack call outputs at index [%d]: %v", i, err)
+		}
+	}
+
+	return calls, nil
+}
+
+// TryCallChunked makes multiple multicalls by chunking given calls using TryAggregate.
+// Cooldown is helpful for sleeping between chunks and avoiding rate limits.
+func (caller *Caller) TryCallChunked(opts *bind.CallOpts, requireSuccess bool, chunkSize int, cooldown time.Duration, calls ...*Call) ([]*Call, error) {
+	var allCalls []*Call
+	for i, chunk := range chunkInputs(chunkSize, calls) {
+		if i > 0 && cooldown > 0 {
+			time.Sleep(cooldown)
+		}
+
+		chunk, err := caller.TryCall(opts, requireSuccess, chunk...)
+		if err != nil {
+			return calls, fmt.Errorf("call chunk [%d] failed: %v", i, err)
+		}
+		allCalls = append(allCalls, chunk...)
+	}
+	return allCalls, nil
+}
