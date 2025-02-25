@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/forta-network/go-multicall/contracts/contract_multicall"
+	"github.com/jbexdp/go-multicall/contracts/contract_multicall"
 	"github.com/stretchr/testify/require"
 )
 
@@ -100,6 +100,15 @@ func (ms *multicallStub) Aggregate3(opts *bind.CallOpts, calls []contract_multic
 		})
 	}
 	return
+}
+
+func (ms *multicallStub) TryAggregate(opts *bind.CallOpts, requireSuccess bool, calls []contract_multicall.Multicall3Call) ([]contract_multicall.Multicall3Result, error) {
+	return []contract_multicall.Multicall3Result{
+		{
+			Success:    true,
+			ReturnData: []byte{},
+		},
+	}, nil
 }
 
 func TestCaller_TwoCalls(t *testing.T) {
